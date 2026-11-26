@@ -124,6 +124,30 @@ Enabling the setting, displays in the application footer a link to a page that a
 
 It requires an email server configured.
 
+## Languages and translations
+
+Go to `Admin console` --> `Settings` --> `Languages and translations` to manage the languages registered in the catalog and to add or override any translation used in the user interface.
+
+The `Registered languages in database` panel lists the languages stored in the database, used for database entities such as group names or portal titles. This is not the list of languages offered to catalog users, which is configured separately (see [User Interface Configuration](user-interface-configuration.md)).
+
+The `Manage translations` panel lets an administrator add a translation for any key used by the application, or override an existing one, without rebuilding the application. This is useful, for example, to configure the [Application banner](#application-banner) message below, to correct a wording, or to translate a label that has no translation yet in your language.
+
+-   **Table mode** Enter the key to translate in the `Add a new translation for` field and click `Add`. This creates one translation field per registered language for that key.
+
+![](img/manage-translations-add-key.png)
+
+![](img/manage-translations-key-rows.png)
+
+-   **JSON mode** Provides direct access to the same data as a JSON array, which can be useful to review or edit several translations at once.
+
+![](img/manage-translations-json-mode.png)
+
+Once the translations are entered, click `Save all translations` to persist them.
+
+!!! tip "Finding the key of an untranslated string"
+
+    When the interface has no translation for a key, it displays the raw key instead of a readable label, for example `SortBy-resourceTitleObject.default.sortAsc` in a sort-by dropdown. If you come across this, copy the text exactly as shown and use it as the key in the `Manage translations` panel to add the missing translation.
+
 ## Application banner
 
 In certain situations it can be useful to display a banner in the application to inform users, for example to announce a maintenance window or an outage.
@@ -134,7 +158,7 @@ Enabling this setting displays a banner in the public pages of the application.
 
 ![](img/application-banner-config.png)
 
-To configure the banner message, go to `Admin console` --> `Settings` --> `Languages and translations` and add a translation entry with the key **application-banner**.
+To configure the banner message, go to `Admin console` --> `Settings` --> `Languages and translations` and add a translation entry with the key **application-banner**. See [Languages and translations](#languages-and-translations) above for details.
 
 ![](img/application-banner-config2.png)
 
@@ -175,9 +199,11 @@ For each metadata schema, the catalog has an XSL transformation (`update-fixed-i
 
 ## Search Statistics {#search_stats_config}
 
-Enables/disables search statistics capture. Search statistics are stored in the database and can be queried using the `Search Statistics` page.
+!!! warning "Not currently functional"
 
-There is very little compute overhead involved in storing search statistics as they are written to the database in a background thread. However database storage for a very busy site must be carefully planned.
+    This setting has no effect. Search statistics capture was removed when the catalog migrated from Lucene to Elasticsearch, with the intention of rebuilding it on top of Elasticsearch and Kibana. That work has not been completed, so enabling this option does not collect any data and there is no `Search Statistics` page to query.
+
+    See [issue #4499](https://github.com/geonetwork/core-geonetwork/issues/4499) for the current status.
 
 ## Open Archive Initiative (OAI-PMH) Provider
 
@@ -249,6 +275,42 @@ Note: this option is only available for databases that have been tested. Those d
 ## Metadata Privileges
 
 *Only set privileges to user's groups*: If enabled then only the groups that the user belongs to will be displayed in the metadata privileges page (unless the user is an Administrator). At the moment this option cannot be disabled and is likely to be deprecated in the next version of GeoNetwork.
+
+## Metadata configuration {#metadata_configuration}
+
+### Thesaurus URL allowlist
+
+Restricts which URLs can be used when importing a thesaurus from a URL or from a registry (see
+[Managing thesaurus](../managing-classification-systems/managing-thesaurus.md)), to prevent the
+catalogue from being used to fetch content from arbitrary, untrusted URLs.
+
+- Enter **one URL pattern per line**.
+- Patterns support the **`*` wildcard**, matching any sequence of characters (including none).
+- Lines starting with **`#`** are treated as comments and ignored.
+- If left **empty** (the default), **any URL is allowed**.
+
+Matching is **host-anchored**: the pattern's scheme, host and path are matched separately, so a
+`*` in the host part cannot spill over into the path. For example, `https://*.example.org/*` does
+**not** match `https://evil.org/.example.org/vocab.rdf`. The host is taken from the parsed URL,
+so a userinfo prefix such as `https://trusted.example.org@evil.org/` is matched on its real host
+(`evil.org`) and rejected. Within the **path** part, `*` still matches across `/`, so
+`https://example.org/*` matches arbitrarily deep paths.
+
+- **Always include the scheme** (`https://…`) so the pattern is host-anchored. A pattern without
+  a scheme (for example a bare `*`, meaning "allow any URL") is matched against the whole URL and
+  is **not** host-anchored.
+
+**Examples:**
+```
+# Only allow this specific vocabulary registry
+https://vocabs.example-registry.org/*
+
+# Allow any subdomain of an organisation
+https://*.example.org/thesaurus/*
+
+# Allow both http and https on a given host
+http*://vocabs.another-example.org/*
+```
 
 ## Metadata import {#editing_harvested_records}
 
